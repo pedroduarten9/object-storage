@@ -1,9 +1,30 @@
-FROM golang:1.15
-WORKDIR /mnt/homework
-COPY . .
-RUN go build
+#
+# Build stage
+#
+FROM golang:1.20 AS build-stage
 
-# Docker is used as a base image so you can easily start playing around in the container using the Docker command line client.
-FROM docker
-COPY --from=0 /mnt/homework/homework-object-storage /usr/local/bin/homework-object-storage
-RUN apk add bash curl
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Tests
+RUN go test -v ./...
+RUN CGO_ENABLED=0 go build -o /api cmd/api.go
+
+#
+# Release stage
+#
+FROM gcr.io/distroless/base-debian11 AS build-release-stage
+
+WORKDIR /
+
+COPY --from=build-stage /api /api
+
+EXPOSE 3000
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/api"]

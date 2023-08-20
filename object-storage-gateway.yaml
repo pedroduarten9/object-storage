@@ -1,0 +1,62 @@
+openapi: 3.0.0
+info:
+  title: Object Storage Gateway
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+
+components:
+  parameters:
+    UuidPath:
+      name: uuid
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    Object:
+      type: object
+      additionalProperties: true
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+paths:
+  /object/{uuid}:
+    get:
+      operationId: getObject
+      description: Gets the object identified by uuid
+      parameters:
+        - $ref: '#/components/parameters/UuidPath'
+      responses:
+        '200':
+          description: Successfully returned the object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+        '404':
+          description: Object not found
+          content:
+            appliaction/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: putObject
+      description: Creates or replaces an object identified by uuid
+      parameters:
+        - $ref: '#/components/parameters/UuidPath'
+      responses:
+        '200':
+          description: Successfully returned the object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
