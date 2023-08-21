@@ -1,4 +1,4 @@
-package gateway_integration
+package gateway_integration_minio
 
 import (
 	"bytes"
