@@ -13,7 +13,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestMinioGateway_GetExistingObject(t *testing.T) {
+func TestGetObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -50,7 +50,7 @@ func TestMinioGateway_GetExistingObject(t *testing.T) {
 	}
 }
 
-func TestMinioGateway_ErrorGetObject(t *testing.T) {
+func TestGetObject_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -75,7 +75,7 @@ func TestMinioGateway_ErrorGetObject(t *testing.T) {
 	}
 }
 
-func TestMinioGateway_GetNonExistingObject(t *testing.T) {
+func TestGetObject_NotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -105,7 +105,7 @@ func TestMinioGateway_GetNonExistingObject(t *testing.T) {
 	}
 }
 
-func TestMinioGateway_PutObject(t *testing.T) {
+func TestPutObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -133,7 +133,7 @@ func TestMinioGateway_PutObject(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestMinioGateway_ErrorPutObject(t *testing.T) {
+func TestPutObject_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

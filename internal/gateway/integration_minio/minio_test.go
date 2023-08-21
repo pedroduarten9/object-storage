@@ -93,7 +93,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestMinioGateway_WithObject(t *testing.T) {
+func TestPutGetObject(t *testing.T) {
 	ctx := context.Background()
 	minioGateway := gateway.MinioGateway{
 		MinioWrapper: gateway.MinioWrapper{
@@ -114,7 +114,7 @@ func TestMinioGateway_WithObject(t *testing.T) {
 	}
 }
 
-func TestMinioGateway_NotFound(t *testing.T) {
+func TestGetObject_NotFound(t *testing.T) {
 	ctx := context.Background()
 	minioGateway := gateway.MinioGateway{
 		MinioWrapper: gateway.MinioWrapper{
