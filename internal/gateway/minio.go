@@ -25,6 +25,7 @@ var _ MinioClient = (*minio.Client)(nil)
 
 type MinioClientWrapper interface {
 	GetObject(ctx context.Context, bucketName, objectName string, opts minio.GetObjectOptions) (MinioObject, error)
+	PutObject(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (info minio.UploadInfo, err error)
 }
 
 var _ MinioClientWrapper = (*MinioWrapper)(nil)
@@ -35,6 +36,10 @@ type MinioWrapper struct {
 
 func (mw MinioWrapper) GetObject(ctx context.Context, bucketName, objectName string, opts minio.GetObjectOptions) (MinioObject, error) {
 	return mw.MinioClient.GetObject(ctx, bucketName, objectName, opts)
+}
+
+func (mw MinioWrapper) PutObject(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (info minio.UploadInfo, err error) {
+	return mw.MinioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, opts)
 }
 
 type MinioGateway struct {
@@ -60,4 +65,20 @@ func (m MinioGateway) GetObject(ctx context.Context, objectName string) ([]byte,
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (m MinioGateway) PutObject(ctx context.Context, objectName string, body *bytes.Reader, objectSize int64) error {
+	_, err := m.MinioWrapper.PutObject(
+		ctx,
+		m.MinioBucket,
+		objectName,
+		body,
+		objectSize,
+		minio.PutObjectOptions{ContentType: "application/json"},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

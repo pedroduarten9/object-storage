@@ -1,11 +1,11 @@
 package gateway
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/minio/minio-go/v7"
@@ -103,4 +103,61 @@ func TestMinioGateway_GetNonExistingObject(t *testing.T) {
 	if assert.Equal(t, &NotFoundError{fmt.Sprintf("object %s not found", objectName)}, err) {
 		assert.Nil(t, data)
 	}
+}
+
+func TestMinioGateway_PutObject(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockWrapper := NewMockMinioClientWrapper(ctrl)
+	gateway := MinioGateway{
+		MinioWrapper: mockWrapper,
+		MinioBucket:  "test-bucket",
+	}
+
+	objectName := "existing_object"
+	data := []byte("Hello, MinIO!")
+	body := bytes.NewReader(data)
+	objectSize := int64(22)
+	mockWrapper.EXPECT().PutObject(
+		ctx,
+		"test-bucket",
+		objectName,
+		body,
+		objectSize,
+		minio.PutObjectOptions{ContentType: "application/json"},
+	).Return(minio.UploadInfo{}, nil)
+
+	err := gateway.PutObject(ctx, objectName, body, objectSize)
+	assert.NoError(t, err)
+}
+
+func TestMinioGateway_ErrorPutObject(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockWrapper := NewMockMinioClientWrapper(ctrl)
+	gateway := MinioGateway{
+		MinioWrapper: mockWrapper,
+		MinioBucket:  "test-bucket",
+	}
+
+	objectName := "existing_object"
+	data := []byte("Hello, MinIO!")
+	body := bytes.NewReader(data)
+	objectSize := int64(22)
+	expectedError := assert.AnError
+	mockWrapper.EXPECT().PutObject(
+		ctx,
+		"test-bucket",
+		objectName,
+		body,
+		objectSize,
+		minio.PutObjectOptions{ContentType: "application/json"},
+	).Return(minio.UploadInfo{}, expectedError)
+
+	err := gateway.PutObject(ctx, objectName, body, objectSize)
+	assert.Equal(t, expectedError, err)
 }

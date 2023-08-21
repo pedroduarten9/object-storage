@@ -105,7 +105,7 @@ func TestMinioGateway_WithObject(t *testing.T) {
 	objectName := "example.json"
 
 	data := []byte("Hello, MinIO!")
-	_, err := testMinioClient.PutObject(ctx, bucketName, objectName, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{})
+	err := minioGateway.PutObject(ctx, objectName, bytes.NewReader(data), int64(len(data)))
 	assert.NoError(t, err)
 
 	retrievedData, err := minioGateway.GetObject(ctx, objectName)

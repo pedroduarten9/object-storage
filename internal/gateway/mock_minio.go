@@ -6,6 +6,7 @@ package gateway
 
 import (
 	context "context"
+	io "io"
 	reflect "reflect"
 
 	minio "github.com/minio/minio-go/v7"
@@ -124,4 +125,19 @@ func (m *MockMinioClientWrapper) GetObject(arg0 context.Context, arg1, arg2 stri
 func (mr *MockMinioClientWrapperMockRecorder) GetObject(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockMinioClientWrapper)(nil).GetObject), arg0, arg1, arg2, arg3)
+}
+
+// PutObject mocks base method.
+func (m *MockMinioClientWrapper) PutObject(arg0 context.Context, arg1, arg2 string, arg3 io.Reader, arg4 int64, arg5 minio.PutObjectOptions) (minio.UploadInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutObject", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret0, _ := ret[0].(minio.UploadInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PutObject indicates an expected call of PutObject.
+func (mr *MockMinioClientWrapperMockRecorder) PutObject(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutObject", reflect.TypeOf((*MockMinioClientWrapper)(nil).PutObject), arg0, arg1, arg2, arg3, arg4, arg5)
 }
