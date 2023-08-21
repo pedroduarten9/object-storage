@@ -16,10 +16,6 @@ components:
         type: string
 
   schemas:
-    Object:
-      type: object
-      additionalProperties: true
-
     Error:
       type: object
       properties:
@@ -39,9 +35,9 @@ paths:
         '200':
           description: Successfully returned the object
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/Object'
+                type: string
         '404':
           description: Object not found
           content:
@@ -57,6 +53,6 @@ paths:
         '200':
           description: Successfully returned the object
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/Object'
+                type: string

@@ -8,6 +8,7 @@ import (
 	"object-storage-gateway/internal/gateway"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -54,12 +55,13 @@ func setupMinioServer() {
 
 	cli.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
 
+	// Wait for containers to start
+	time.Sleep(2 * time.Second)
+
 	testMinioClient, _ = minio.New("localhost:9000", &minio.Options{
 		Creds:  credentials.NewStaticV4(user, pass, ""),
 		Secure: false,
 	})
-
-	testMinioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
 }
 
 func teardown() {
@@ -126,5 +128,5 @@ func TestGetObject_NotFound(t *testing.T) {
 	objectName := "not_found.json"
 	retrievedData, err := minioGateway.GetObject(ctx, objectName)
 	assert.Nil(t, retrievedData)
-	assert.Equal(t, &gateway.NotFoundError{Msg: fmt.Sprintf("object %s not found", objectName)}, err)
+	assert.Equal(t, gateway.NotFoundError{Msg: fmt.Sprintf("object %s not found", objectName)}, err)
 }

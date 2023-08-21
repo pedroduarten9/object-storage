@@ -3,6 +3,7 @@ package gateway_integration_docker
 import (
 	"context"
 	"testing"
+	"time"
 
 	"object-storage-gateway/internal/gateway"
 
@@ -38,6 +39,9 @@ func TestGetContainersWithPrefix(t *testing.T) {
 	}, nil, nil, nil, "no-minio-1")
 	cli.ContainerStart(ctx, resp2.ID, types.ContainerStartOptions{})
 
+	// Wait for containers to start
+	time.Sleep(2 * time.Second)
+
 	defer func() {
 		cli.ContainerRemove(ctx, resp1.ID, types.ContainerRemoveOptions{Force: true})
 		cli.ContainerRemove(ctx, resp2.ID, types.ContainerRemoveOptions{Force: true})
@@ -65,6 +69,9 @@ func TestGetContainersInfo(t *testing.T) {
 		Cmd: []string{"server", "/tmp/data"},
 	}, nil, nil, nil, "minio-1")
 	cli.ContainerStart(ctx, resp1.ID, types.ContainerStartOptions{})
+
+	// Wait for containers to start
+	time.Sleep(2 * time.Second)
 
 	defer func() {
 		cli.ContainerRemove(ctx, resp1.ID, types.ContainerRemoveOptions{Force: true})

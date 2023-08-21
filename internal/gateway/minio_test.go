@@ -27,12 +27,16 @@ func TestGetObject(t *testing.T) {
 
 	objectName := "existing_object"
 	expectedObject := []byte{}
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(nil)
 	mockWrapper.EXPECT().GetObject(
 		ctx,
 		"test-bucket",
 		objectName,
 		minio.GetObjectOptions{},
-	).Return(mockObject, nil).Times(1)
+	).Return(mockObject, nil)
 	mockObject.EXPECT().Read(
 		gomock.Any(),
 	).DoAndReturn(func(p []byte) (int, error) {
@@ -50,6 +54,29 @@ func TestGetObject(t *testing.T) {
 	}
 }
 
+func TestGetObject_ErrorCreatingBucket(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockWrapper := NewMockMinioClientWrapper(ctrl)
+	gateway := MinioGateway{
+		MinioWrapper: mockWrapper,
+		MinioBucket:  "test-bucket",
+	}
+
+	expectedError := assert.AnError
+	objectName := "non_existing_object"
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(expectedError)
+	data, err := gateway.GetObject(ctx, objectName)
+	if assert.Equal(t, expectedError, err) {
+		assert.Nil(t, data)
+	}
+}
+
 func TestGetObject_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -63,6 +90,10 @@ func TestGetObject_Error(t *testing.T) {
 
 	expectedError := assert.AnError
 	objectName := "non_existing_object"
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(nil)
 	mockWrapper.EXPECT().GetObject(
 		ctx,
 		"test-bucket",
@@ -88,6 +119,10 @@ func TestGetObject_NotFound(t *testing.T) {
 	}
 
 	objectName := "non_existing_object"
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(nil)
 	mockWrapper.EXPECT().GetObject(
 		ctx,
 		"test-bucket",
@@ -100,7 +135,7 @@ func TestGetObject_NotFound(t *testing.T) {
 		return 0, errors.New("object not found")
 	})
 	data, err := gateway.GetObject(ctx, objectName)
-	if assert.Equal(t, &NotFoundError{fmt.Sprintf("object %s not found", objectName)}, err) {
+	if assert.Equal(t, NotFoundError{fmt.Sprintf("object %s not found", objectName)}, err) {
 		assert.Nil(t, data)
 	}
 }
@@ -120,6 +155,10 @@ func TestPutObject(t *testing.T) {
 	data := []byte("Hello, MinIO!")
 	body := bytes.NewReader(data)
 	objectSize := int64(22)
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(nil)
 	mockWrapper.EXPECT().PutObject(
 		ctx,
 		"test-bucket",
@@ -131,6 +170,31 @@ func TestPutObject(t *testing.T) {
 
 	err := gateway.PutObject(ctx, objectName, body, objectSize)
 	assert.NoError(t, err)
+}
+
+func TestPutObject_ErrorCreatingBucket(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockWrapper := NewMockMinioClientWrapper(ctrl)
+	gateway := MinioGateway{
+		MinioWrapper: mockWrapper,
+		MinioBucket:  "test-bucket",
+	}
+
+	objectName := "existing_object"
+	data := []byte("Hello, MinIO!")
+	body := bytes.NewReader(data)
+	objectSize := int64(22)
+	expectedError := assert.AnError
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(expectedError)
+
+	err := gateway.PutObject(ctx, objectName, body, objectSize)
+	assert.Equal(t, expectedError, err)
 }
 
 func TestPutObject_Error(t *testing.T) {
@@ -149,6 +213,10 @@ func TestPutObject_Error(t *testing.T) {
 	body := bytes.NewReader(data)
 	objectSize := int64(22)
 	expectedError := assert.AnError
+	mockWrapper.EXPECT().CreateBucketIfNotExists(
+		ctx,
+		"test-bucket",
+	).Return(nil)
 	mockWrapper.EXPECT().PutObject(
 		ctx,
 		"test-bucket",

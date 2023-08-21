@@ -1,4 +1,4 @@
-//go:generate mockgen -destination mock_minio.go -package gateway . MinioClient,MinioObject,MinioClientWrapper
+//go:generate mockgen -destination mock_minio.go -package gateway . MinioObject,MinioClientWrapper,Minio
 
 package gateway
 
@@ -17,15 +17,10 @@ type MinioObject interface {
 
 var _ MinioObject = (*minio.Object)(nil)
 
-type MinioClient interface {
-	GetObject(ctx context.Context, bucketName, objectName string, opts minio.GetObjectOptions) (*minio.Object, error)
-}
-
-var _ MinioClient = (*minio.Client)(nil)
-
 type MinioClientWrapper interface {
 	GetObject(ctx context.Context, bucketName, objectName string, opts minio.GetObjectOptions) (MinioObject, error)
 	PutObject(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, opts minio.PutObjectOptions) (info minio.UploadInfo, err error)
+	CreateBucketIfNotExists(ctx context.Context, bucketName string) error
 }
 
 var _ MinioClientWrapper = (*MinioWrapper)(nil)
@@ -42,12 +37,34 @@ func (mw MinioWrapper) PutObject(ctx context.Context, bucketName, objectName str
 	return mw.MinioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, opts)
 }
 
+func (mw MinioWrapper) CreateBucketIfNotExists(ctx context.Context, bucketName string) error {
+	exists, err := mw.MinioClient.BucketExists(ctx, bucketName)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		mw.MinioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+	}
+	return nil
+}
+
+type Minio interface {
+	GetObject(ctx context.Context, objectName string) ([]byte, error)
+	PutObject(ctx context.Context, objectName string, body *bytes.Reader, objectSize int64) error
+}
+
 type MinioGateway struct {
 	MinioWrapper MinioClientWrapper
 	MinioBucket  string
 }
 
 func (m MinioGateway) GetObject(ctx context.Context, objectName string) ([]byte, error) {
+	err := m.MinioWrapper.CreateBucketIfNotExists(ctx, m.MinioBucket)
+	if err != nil {
+		return nil, err
+	}
+
 	object, err := m.MinioWrapper.GetObject(
 		ctx,
 		m.MinioBucket,
@@ -61,14 +78,19 @@ func (m MinioGateway) GetObject(ctx context.Context, objectName string) ([]byte,
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, object)
 	if err != nil {
-		return nil, &NotFoundError{fmt.Sprintf("object %s not found", objectName)}
+		return nil, NotFoundError{fmt.Sprintf("object %s not found", objectName)}
 	}
 
 	return buf.Bytes(), nil
 }
 
 func (m MinioGateway) PutObject(ctx context.Context, objectName string, body *bytes.Reader, objectSize int64) error {
-	_, err := m.MinioWrapper.PutObject(
+	err := m.MinioWrapper.CreateBucketIfNotExists(ctx, m.MinioBucket)
+	if err != nil {
+		return err
+	}
+
+	_, err = m.MinioWrapper.PutObject(
 		ctx,
 		m.MinioBucket,
 		objectName,
@@ -81,4 +103,8 @@ func (m MinioGateway) PutObject(ctx context.Context, objectName string, body *by
 	}
 
 	return nil
+}
+
+func (m MinioGateway) CreateBucketIfNotExists(ctx context.Context, bucketName string) error {
+	return m.MinioWrapper.CreateBucketIfNotExists(ctx, bucketName)
 }

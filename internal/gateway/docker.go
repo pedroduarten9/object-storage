@@ -7,12 +7,15 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 )
 
 type DockerClient interface {
 	ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error)
 	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
 }
+
+var _ DockerClient = (*client.Client)(nil)
 
 type DockerGateway struct {
 	DockerClient DockerClient
@@ -43,7 +46,7 @@ func (d DockerGateway) ExtractContainerInfo(ctx context.Context, containerID str
 		return nil, nil, err
 	}
 
-	endpoint := containerInspect.NetworkSettings.IPAddress
+	endpoint := strings.TrimPrefix(containerInspect.Name, "/") + ":9000"
 	envVars := map[string]string{}
 	for _, ev := range containerInspect.Config.Env {
 		vars := strings.SplitN(ev, "=", 2)

@@ -2,12 +2,13 @@ package main
 
 import (
 	"object-storage-gateway/internal/api"
+	"object-storage-gateway/internal/domain"
+	"object-storage-gateway/internal/gateway"
 
+	"github.com/docker/docker/client"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
 )
 
@@ -18,10 +19,22 @@ func main() {
 
 	logger, _ := zap.NewDevelopment()
 	e.Use(api.LoggerMiddleware(logger))
-	e.Use(api.RequestIDMiddleware())
-	e.Use(api.AuthenticationMiddleware())
 	e.Use(middleware.Recover())
 
-	api.RegisterHandlers(e, api.New())
+	e.HTTPErrorHandler = api.HttpErrorHandler
+
+	cli, _ := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+
+	dockerGateway := gateway.DockerGateway{DockerClient: cli}
+	loadBalancer := domain.MinioLoadBalancerImpl{
+		DockerGateway:   dockerGateway,
+		InstancesPrefix: "object-storage-amazin-object-storage-node-",
+	}
+
+	minioBucket := "minio-bucket"
+	api.RegisterHandlers(e, api.API{
+		LoadBalancer: loadBalancer,
+		MinioBucket:  minioBucket,
+	})
 	e.Logger.Fatal(e.Start(":3000"))
 }
