@@ -103,7 +103,8 @@ func TestExtractContainerInfo(t *testing.T) {
 
 	ctx := context.Background()
 	containerID := "some-id"
-	expectedEndpoint := "some-endpoint"
+	containerName := "/some-name"
+	expectedEndpoint := "some-name:9000"
 	expectedEnvVars := map[string]string{
 		"env-var-1": "value1",
 		"env-var-2": "value2",
@@ -114,6 +115,9 @@ func TestExtractContainerInfo(t *testing.T) {
 	}
 
 	container := types.ContainerJSON{
+		ContainerJSONBase: &types.ContainerJSONBase{
+			Name: containerName,
+		},
 		NetworkSettings: &types.NetworkSettings{
 			DefaultNetworkSettings: types.DefaultNetworkSettings{
 				IPAddress: expectedEndpoint,

@@ -50,7 +50,7 @@ func TestGetObject(t *testing.T) {
 	err := s.GetObject(c)
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "\""+minioObject+"\"\n", rec.Body.String())
+		assert.Equal(t, minioObject, rec.Body.String())
 	}
 }
 
@@ -94,6 +94,6 @@ func TestPutObject(t *testing.T) {
 
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "\""+string(minioObject)+"\"\n", rec.Body.String())
+		assert.Equal(t, string(minioObject), rec.Body.String())
 	}
 }
